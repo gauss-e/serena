@@ -1,0 +1,11 @@
+[project]
+name = "serena"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "tiktoken>=0.13.0",
+    "torch>=2.12.1",
+    "torchvision>=0.27.1",
+]
