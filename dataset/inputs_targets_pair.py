@@ -10,7 +10,9 @@ class GPTDataset(Dataset):
     self.target_ids: list[torch.Tensor] = []
 
     token_ids = tokenizer.encode(text)
+    self._generate_inputs_targets(token_ids, max_length, stride)
 
+  def _generate_inputs_targets(self, token_ids, max_length, stride):
     for i in  range(0, len(token_ids) - max_length, stride):
       input_chunk = token_ids[i:i + max_length]
       target_chunk = token_ids[i + 1: i + max_length + 1]

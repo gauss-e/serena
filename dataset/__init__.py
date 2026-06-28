@@ -1,5 +1,4 @@
 from torch.utils.data import DataLoader
-
 from dataset.inputs_targets_pair import GPTDataset
 
 
