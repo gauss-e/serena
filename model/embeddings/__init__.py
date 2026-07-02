@@ -8,8 +8,8 @@ token_embedding_layer = torch.nn.Embedding(vocab_size, output_dim)
 pos_embedding_layer = torch.nn.Embedding(4, output_dim)
 pos_embedding = pos_embedding_layer(torch.arange(4))
 
-def get_token_embeddings(inputs: torch.Tensor) -> torch.Tensor:
+def embed_tokens(inputs: torch.Tensor) -> torch.Tensor:
   return token_embedding_layer(inputs)
 
-def get_input_embeddings(token_embeddings) -> torch.Tensor:
+def generate_inputs_embeddings(token_embeddings) -> torch.Tensor:
   return token_embeddings + pos_embedding

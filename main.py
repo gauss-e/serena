@@ -1,5 +1,8 @@
 import urllib.request
 import dataset
+from model.attention.self_attention import SelfAttention
+from model.embeddings import generate_inputs_embeddings, embed_tokens
+
 
 def main():
     url = ("https://raw.githubusercontent.com/rasbt/"
@@ -13,7 +16,12 @@ def main():
                                           max_length=4, stride=4, shuffle=False)
     data_iter = iter(dataloader)
     inputs, target = next(data_iter)
-    print(inputs)
+    # print(inputs)
+
+    print(generate_inputs_embeddings(embed_tokens(inputs)))
+
+    self_attention = SelfAttention(4,2)
+    print(self_attention(inputs))
 
 
 if __name__ == "__main__":
