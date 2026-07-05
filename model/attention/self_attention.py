@@ -19,7 +19,7 @@ class SelfAttention(nn.Module):
     queries = self.w_query(x)
 
     attn_scores = queries @ keys.transpose(1, 2)
-    attn_scores.masked_fill(
+    attn_scores.masked_fill_(
         self.mask.bool()[:num_tokens, :num_tokens], -torch.inf
     )
     attn_weights = torch.softmax(
