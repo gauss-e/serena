@@ -22,7 +22,7 @@ class DummyGPTModel(nn.Module):
     pos_embeds = self.pos_emb(
         torch.arange(seq_len, device=tok_embeds.device)
     )
-    x =tok_embeds + pos_embeds
+    x = tok_embeds + pos_embeds
     x = self.drop_emb(x)
     x = self.trf_blocks(x)
     x = self.final_norm(x)
@@ -44,3 +44,16 @@ class DummyLayerNorm(nn.Module):
 
   def forward(self, x):
     return x
+
+class LayerNorm(nn.Module):
+  def __init__(self, emb_dim):
+    super().__init__()
+    self.eps = 1e-5
+    self.scale = nn.Parameter(torch.ones(emb_dim))
+    self.shift = nn.Parameter(torch.zeros(emb_dim))
+
+  def forward(self, x):
+    mean = x.mean(dim=-1, keepdim=True)
+    var = x.var(dim=-1, keepdim=True)
+    norm_x = (x - mean) / (torch.sqrt(var + self.eps))
+    return self.scale * norm_x + self.shift

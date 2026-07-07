@@ -6,7 +6,7 @@ import torch
 import dataset
 from model.attention.self_attention import SelfAttention
 from model.embeddings import generate_inputs_embeddings, embed_tokens
-from model.gpt_model import DummyGPTModel
+from model.gpt_model import DummyGPTModel, LayerNorm
 
 GPT_CONFIG_124M = {
         "vocab_size": 50257,
@@ -45,13 +45,24 @@ def main():
     batch.append(torch.tensor(tokenizer.encode(txt1)))
     batch.append(torch.tensor(tokenizer.encode(txt2)))
     batch = torch.stack(batch, dim=0)
-    print(batch)
+    # print(batch)
 
     torch.manual_seed(123)
     model = DummyGPTModel(GPT_CONFIG_124M)
     logits = model(batch)
     print(logits)
     print(logits.shape)
+
+    torch.manual_seed(123)
+    batch_example = torch.randn(2, 5)
+
+    ln = LayerNorm(emb_dim=5)
+    out_ln = ln(batch_example)
+    mean = out_ln.mean(dim=-1, keepdim=True)
+    var = out_ln.var(dim=-1, keepdim=True, unbiased=False)
+    torch.set_printoptions(sci_mode=False)
+    print("Mean:", mean)
+    print("Variance:", var)
 
 
 if __name__ == "__main__":
