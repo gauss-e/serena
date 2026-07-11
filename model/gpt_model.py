@@ -1,7 +1,9 @@
-from typing import Any
-
 import torch
 from torch import nn
+from torch.nn import GELU
+
+from model.attention.multi_head_self_attention import MultiHeadAttention
+
 
 class DummyGPTModel(nn.Module):
   def __init__(self, cfg):
@@ -10,10 +12,10 @@ class DummyGPTModel(nn.Module):
     self.pos_emb = nn.Embedding(cfg["context_length"], cfg["emb_dim"])
     self.drop_emb = nn.Dropout(p=cfg["drop_rate"])
     self.trf_blocks = nn.Sequential(
-        *[DummyTransformerBlock(cfg)
+        *[TransformerBlock(cfg)
           for _ in range(cfg["n_layers"])]
     )
-    self.final_norm = DummyLayerNorm(cfg["emb_dim"])
+    self.final_norm = LayerNorm(cfg["emb_dim"])
     self.out_head = nn.Linear(cfg["emb_dim"], cfg["vocab_size"], bias=False)
 
   def forward(self, in_idx):
@@ -30,20 +32,48 @@ class DummyGPTModel(nn.Module):
     return logits
 
 
-class DummyTransformerBlock(nn.Module):
+class TransformerBlock(nn.Module):
   def __init__(self, cfg):
     super().__init__()
+    self.att = MultiHeadAttention(
+        d_in=cfg["emb_dim"],
+        d_out=cfg["emb_dim"],
+        context_length=cfg["context_length"],
+        num_heads=cfg["n_heads"],
+        dropout=cfg["drop_rate"],
+        qkv_bias=cfg["qkv_bias"]
+    )
+    self.ff = FeedForward(cfg)
+    self.norm1 = LayerNorm(cfg["emb_dim"])
+    self.norm2 = LayerNorm(cfg["emb_dim"])
+    self.drop_shortcut = nn.Dropout(cfg["drop_rate"])
 
   def forward(self, x):
+    shortcut = x
+    x = self.norm1(x)
+    x = self.att(x)
+    x = self.drop_shortcut(x)
+    x = x + shortcut
+
+    shortcut = x
+    x = self.norm2(x)
+    x = self.ff(x)
+    x = self.drop_shortcut(x)
+    x = x + shortcut
     return x
 
 
-class DummyLayerNorm(nn.Module):
-  def __init__(self, normalized_shape, eps=1e-5):
+class FeedForward(nn.Module):
+  def __init__(self, cfg):
     super().__init__()
+    self.layers = nn.Sequential(
+      nn.Linear(cfg["emb_dim"], 4 * cfg["emb_dim"]),
+      GELU(),
+      nn.Linear(4 * cfg["emb_dim"], cfg["emb_dim"]),
+    )
 
   def forward(self, x):
-    return x
+    return self.layers(x)
 
 class LayerNorm(nn.Module):
   def __init__(self, emb_dim):
