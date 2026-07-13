@@ -3,10 +3,7 @@ import urllib.request
 import tiktoken
 import torch
 
-import dataset
-from model.attention.self_attention import SelfAttention
-from model.embeddings import generate_inputs_embeddings, embed_tokens
-from model.gpt_model import DummyGPTModel, LayerNorm
+from model.gpt_model import LayerNorm, GPTModel
 
 GPT_CONFIG_124M = {
         "vocab_size": 50257,
@@ -48,21 +45,23 @@ def main():
     # print(batch)
 
     torch.manual_seed(123)
-    model = DummyGPTModel(GPT_CONFIG_124M)
+    model = GPTModel(GPT_CONFIG_124M)
     logits = model(batch)
     print(logits)
     print(logits.shape)
 
-    torch.manual_seed(123)
-    batch_example = torch.randn(2, 5)
+def generate_text_simple(model, idx, max_new_tokens, context_size):
+  for _ in range(max_new_tokens):
+    idx_cond = idx[:, -context_size:]
+    with torch.no_grad():
+      logits = model(idx_cond)
 
-    ln = LayerNorm(emb_dim=5)
-    out_ln = ln(batch_example)
-    mean = out_ln.mean(dim=-1, keepdim=True)
-    var = out_ln.var(dim=-1, keepdim=True, unbiased=False)
-    torch.set_printoptions(sci_mode=False)
-    print("Mean:", mean)
-    print("Variance:", var)
+    logits = logits[:, -1, :]
+    probes = torch.softmax(logits, dim=-1)
+    idx_next = torch.argmax(probes, dim=-1, keepdim=True)
+    idx = torch.cat((idx_cond, idx_next), dim=-1)
+
+  return idx
 
 
 if __name__ == "__main__":
