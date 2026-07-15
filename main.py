@@ -15,46 +15,24 @@ GPT_CONFIG_124M = {
         "qkv_bias": False
     }
 
-def main():
-    # url = ("https://raw.githubusercontent.com/rasbt/"
-    #        "LLMs-from-scratch/main/ch02/01_main-chapter-code/"
-    #        "the-verdict.txt")
-    #
-    # with urllib.request.urlopen(url) as response:
-    #     raw_text = response.read().decode("utf-8")
-    #
-    # dataloader = dataset.create_dataloader(raw_text, batch_size=8,
-    #                                       max_length=4, stride=4, shuffle=False)
-    # data_iter = iter(dataloader)
-    # inputs, target = next(data_iter)
-    # # print(inputs)
-    #
-    # print(generate_inputs_embeddings(embed_tokens(inputs)))
-    #
-    # self_attention = SelfAttention(4,2)
-    # print(self_attention(inputs))
-    tokenizer = tiktoken.get_encoding("gpt2")
+torch.manual_seed(123)
+model = GPTModel(GPT_CONFIG_124M)
+model.eval()
 
-    batch = []
-    txt1 = "Every effort moves you"
-    txt2 = "Every day holds a"
+def text_to_token_ids(text, tokenizer):
+  encoded = tokenizer.encode(text, allowed_special={'<|endoftext|>'})
+  encoded_tensor = torch.tensor(encoded).unsqueeze(0)
+  return encoded_tensor
 
-    batch.append(torch.tensor(tokenizer.encode(txt1)))
-    batch.append(torch.tensor(tokenizer.encode(txt2)))
-    batch = torch.stack(batch, dim=0)
-    # print(batch)
+def token_ids_to_text(token_ids, tokenizer):
+  flat = token_ids.squeeze(0)
+  return tokenizer.decode(flat.tolist())
 
-    torch.manual_seed(123)
-    model = GPTModel(GPT_CONFIG_124M)
-    logits = model(batch)
-    print(logits)
-    print(logits.shape)
-
-def generate_text_simple(model, idx, max_new_tokens, context_size):
+def generate_text_simple(chat_model, idx, max_new_tokens, context_size):
   for _ in range(max_new_tokens):
     idx_cond = idx[:, -context_size:]
     with torch.no_grad():
-      logits = model(idx_cond)
+      logits = chat_model(idx_cond)
 
     logits = logits[:, -1, :]
     probes = torch.softmax(logits, dim=-1)
@@ -62,6 +40,17 @@ def generate_text_simple(model, idx, max_new_tokens, context_size):
     idx = torch.cat((idx_cond, idx_next), dim=-1)
 
   return idx
+
+def main():
+    start_context = "Evert effort moves you"
+    tokenizer = tiktoken.get_encoding("gpt2")
+
+    token_ids = generate_text_simple(chat_model=model,
+                                     idx=text_to_token_ids(start_context, tokenizer=tokenizer),
+                                     max_new_tokens=10,
+                                     context_size=GPT_CONFIG_124M["context_length"])
+    print("output text: ", token_ids_to_text(token_ids, tokenizer=tokenizer))
+
 
 
 if __name__ == "__main__":
